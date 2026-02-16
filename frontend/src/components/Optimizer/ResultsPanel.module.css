@@ -1,0 +1,141 @@
+.container {
+  animation: fadeIn var(--transition-base);
+}
+
+/* --- Empty State --- */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 40px;
+  height: 40px;
+  color: var(--color-neutral-200);
+  margin-bottom: var(--space-2);
+}
+
+.emptyText {
+  font-size: var(--text-sm);
+  color: var(--color-neutral-400);
+  max-width: 240px;
+}
+
+/* --- Summary Cards --- */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.metricCard {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.metricBudget {
+  background-color: var(--color-accent-light);
+}
+
+.metricUsed {
+  background-color: var(--color-success-50);
+}
+
+.metricPrevented {
+  background-color: var(--color-warning-50);
+}
+
+.metricLabel {
+  font-size: var(--text-xs);
+  color: var(--color-neutral-500);
+  font-weight: var(--font-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metricValue {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-neutral-900);
+  margin-top: var(--space-1);
+}
+
+/* --- Table --- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table thead th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid var(--color-neutral-200);
+  font-weight: var(--font-semibold);
+  color: var(--color-neutral-600);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.table thead th:not(:first-child) {
+  text-align: right;
+}
+
+.table tbody td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-neutral-100);
+  color: var(--color-neutral-800);
+}
+
+.table tbody td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-neutral-50);
+}
+
+@media (max-width: 640px) {
+  .metrics {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .metricCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
+
+  .metricValue {
+    margin-top: 0;
+  }
+
+  .table {
+    font-size: var(--text-xs);
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: var(--space-1) var(--space-2);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

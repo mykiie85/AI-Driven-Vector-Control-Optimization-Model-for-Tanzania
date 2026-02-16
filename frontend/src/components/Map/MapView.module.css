@@ -1,0 +1,77 @@
+.container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+/* Popup Styles */
+.popup {
+  min-width: 200px;
+  font-family: var(--font-family);
+}
+
+.popupName {
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-neutral-900);
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-neutral-100);
+}
+
+.popupTable {
+  width: 100%;
+  font-size: var(--text-sm);
+}
+
+.popupTable td {
+  padding: 3px 0;
+}
+
+.popupLabel {
+  color: var(--color-neutral-500);
+}
+
+.popupValue {
+  text-align: right;
+  font-weight: var(--font-medium);
+  color: var(--color-neutral-900);
+}
+
+.popupRisk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.popupRiskDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.viewBtn {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--color-primary-800);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  text-align: center;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.viewBtn:hover {
+  background-color: var(--color-primary-700);
+}

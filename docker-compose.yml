@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vcom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vcom_secret_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-vcom_tz}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vcom} -d ${POSTGRES_DB:-vcom_tz}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-vcom}:${POSTGRES_PASSWORD:-vcom_secret_change_me}@db:5432/${POSTGRES_DB:-vcom_tz}
+      API_KEY: ${API_KEY:-change-me-to-a-secure-key}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      R_TIMEOUT: ${R_TIMEOUT:-300}
+      R_SCRIPT_PATH: /app/app/r_scripts
+      NLP_MODEL: ${NLP_MODEL:-facebook/bart-large-cnn}
+      NLP_MAX_LENGTH: ${NLP_MAX_LENGTH:-130}
+      NLP_MIN_LENGTH: ${NLP_MIN_LENGTH:-30}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000/api/v1}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
