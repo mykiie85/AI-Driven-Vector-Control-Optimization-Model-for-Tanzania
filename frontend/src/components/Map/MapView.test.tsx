@@ -3,15 +3,20 @@ import { render, screen } from "@testing-library/react";
 import MapView from "./MapView";
 import { RegionGeoJSON } from "../../types";
 
-// Mock react-leaflet
+// Capture callbacks from GeoJSON for testing
+let capturedStyle: any = null;
+let capturedOnEachFeature: any = null;
+
 jest.mock("react-leaflet", () => ({
-  MapContainer: ({ children, ...props }: any) => (
-    <div data-testid="map-container" {...props}>{children}</div>
+  MapContainer: ({ children, className, center, zoom, scrollWheelZoom, ...rest }: any) => (
+    <div data-testid="map-container">{children}</div>
   ),
   TileLayer: () => <div data-testid="tile-layer" />,
-  GeoJSON: ({ data, style, onEachFeature }: any) => (
-    <div data-testid="geojson-layer" data-features={data?.features?.length ?? 0} />
-  ),
+  GeoJSON: ({ data, style, onEachFeature }: any) => {
+    capturedStyle = style;
+    capturedOnEachFeature = onEachFeature;
+    return <div data-testid="geojson-layer" data-features={data?.features?.length ?? 0} />;
+  },
 }));
 
 jest.mock("leaflet/dist/leaflet.css", () => ({}));
@@ -47,6 +52,11 @@ const mockData: RegionGeoJSON = {
 const emptyData: RegionGeoJSON = { type: "FeatureCollection", features: [] };
 
 describe("MapView", () => {
+  beforeEach(() => {
+    capturedStyle = null;
+    capturedOnEachFeature = null;
+  });
+
   it("renders map container with accessible label", () => {
     render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
     expect(
@@ -85,5 +95,92 @@ describe("MapView", () => {
     const { unmount } = render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
     unmount();
     expect((window as any).__selectRegion).toBeUndefined();
+  });
+
+  describe("style callback", () => {
+    it("returns correct style for high risk region", () => {
+      render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
+      expect(capturedStyle).toBeDefined();
+      const result = capturedStyle({ properties: { risk_score: 0.75 } });
+      expect(result.fillColor).toBe("#f44336");
+      expect(result.weight).toBe(2);
+      expect(result.fillOpacity).toBe(0.65);
+    });
+
+    it("returns correct style for critical risk (>=0.8)", () => {
+      render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
+      const result = capturedStyle({ properties: { risk_score: 0.9 } });
+      expect(result.fillColor).toBe("#b71c1c");
+    });
+
+    it("returns correct style for medium risk (>=0.3)", () => {
+      render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
+      const result = capturedStyle({ properties: { risk_score: 0.45 } });
+      expect(result.fillColor).toBe("#ff9800");
+    });
+
+    it("returns correct style for low risk (<0.3)", () => {
+      render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
+      const result = capturedStyle({ properties: { risk_score: 0.1 } });
+      expect(result.fillColor).toBe("#4caf50");
+    });
+
+    it("handles missing risk_score", () => {
+      render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
+      const result = capturedStyle({ properties: {} });
+      expect(result.fillColor).toBe("#4caf50");
+    });
+  });
+
+  describe("onEachFeature callback", () => {
+    it("binds popup and click handler to layer", () => {
+      const onSelectRegion = jest.fn();
+      render(<MapView data={mockData} onSelectRegion={onSelectRegion} />);
+      expect(capturedOnEachFeature).toBeDefined();
+
+      const mockLayer = {
+        bindPopup: jest.fn(),
+        on: jest.fn(),
+      };
+
+      capturedOnEachFeature(mockData.features[0], mockLayer);
+
+      expect(mockLayer.bindPopup).toHaveBeenCalledTimes(1);
+      expect(mockLayer.bindPopup).toHaveBeenCalledWith(expect.stringContaining("Dar es Salaam"));
+      expect(mockLayer.on).toHaveBeenCalledWith({ click: expect.any(Function) });
+    });
+
+    it("click handler calls onSelectRegion with region id", () => {
+      const onSelectRegion = jest.fn();
+      render(<MapView data={mockData} onSelectRegion={onSelectRegion} />);
+
+      const mockLayer = { bindPopup: jest.fn(), on: jest.fn() };
+      capturedOnEachFeature(mockData.features[0], mockLayer);
+
+      // Extract and invoke the click handler
+      const clickHandler = mockLayer.on.mock.calls[0][0].click;
+      clickHandler();
+      expect(onSelectRegion).toHaveBeenCalledWith(1);
+    });
+
+    it("popup includes population and area", () => {
+      render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
+      const mockLayer = { bindPopup: jest.fn(), on: jest.fn() };
+      capturedOnEachFeature(mockData.features[0], mockLayer);
+
+      const popupHtml = mockLayer.bindPopup.mock.calls[0][0];
+      expect(popupHtml).toContain("5,000,000");
+      expect(popupHtml).toContain("1,393");
+    });
+
+    it("popup shows correct risk label", () => {
+      render(<MapView data={mockData} onSelectRegion={jest.fn()} />);
+      const mockLayer = { bindPopup: jest.fn(), on: jest.fn() };
+      capturedOnEachFeature(mockData.features[0], mockLayer);
+
+      const popupHtml = mockLayer.bindPopup.mock.calls[0][0];
+      expect(popupHtml).toContain("High");
+      expect(popupHtml).toContain("75%");
+    });
   });
 });

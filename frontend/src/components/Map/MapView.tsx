@@ -11,13 +11,6 @@ interface MapViewProps {
   onSelectRegion: (id: number) => void;
 }
 
-function getRiskColor(score: number): string {
-  if (score >= 0.8) return "var(--risk-critical, #b71c1c)";
-  if (score >= 0.6) return "var(--risk-high, #f44336)";
-  if (score >= 0.3) return "var(--risk-medium, #ff9800)";
-  return "var(--risk-low, #4caf50)";
-}
-
 function getRiskColorRaw(score: number): string {
   if (score >= 0.8) return "#b71c1c";
   if (score >= 0.6) return "#f44336";

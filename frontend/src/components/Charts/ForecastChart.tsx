@@ -87,7 +87,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ forecast, isLoading }) =>
       title: {
         display: true,
         text: `${forecast.region_name} — ${forecast.model_type.toUpperCase()} (${forecast.forecast_days}d)`,
-        font: { size: 13, weight: "600" as const },
+        font: { size: 13, weight: "bold" as const },
         color: "#333",
       },
       tooltip: {

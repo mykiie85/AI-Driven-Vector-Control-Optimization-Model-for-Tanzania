@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>18/21</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">90% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>9/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">57.14% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>4/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">87.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>14/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -181,27 +181,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -232,10 +232,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -283,27 +283,27 @@ import styles from "./Dashboard.module.css";
 &nbsp;
 type ModelType = "prophet" | "arima" | "hybrid";
 &nbsp;
-const Dashboard: React.FC&lt;{ sidebarOpen: boolean; onCloseSidebar: () =&gt; void }&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
+const Dashboard: React.FC&lt;{ sidebarOpen: boolean; onCloseSidebar: () =&gt; void }&gt; = ({
   sidebarOpen,
   onCloseSidebar,
 }) =&gt; {
-  const [selectedRegionId, setSelectedRegionId] = <span class="cstat-no" title="statement not covered" >useState&lt;number | null&gt;(null);</span>
-  const [modelType, setModelType] = <span class="cstat-no" title="statement not covered" >useState&lt;ModelType&gt;("prophet");</span>
-  const { data: regionsData, isLoading: regionsLoading, error: regionsError, refetch } = <span class="cstat-no" title="statement not covered" >useRegions();</span>
-  const { data: forecast, isLoading: forecastLoading } = <span class="cstat-no" title="statement not covered" >useForecast(selectedRegionId, 30, modelType);</span>
-  const optimizer = <span class="cstat-no" title="statement not covered" >useOptimizer();</span>
+  const [selectedRegionId, setSelectedRegionId] = useState&lt;number | null&gt;(null);
+  const [modelType, setModelType] = useState&lt;ModelType&gt;("prophet");
+  const { data: regionsData, isLoading: regionsLoading, error: regionsError, refetch } = useRegions();
+  const { data: forecast, isLoading: forecastLoading } = useForecast(selectedRegionId, 30, modelType);
+  const optimizer = useOptimizer();
 &nbsp;
-  const handleSelectRegion = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >(i</span>d: number) =&gt; {</span>
+  const handleSelectRegion = useCallback(<span class="fstat-no" title="function not covered" >(i</span>d: number) =&gt; {
 <span class="cstat-no" title="statement not covered" >    setSelectedRegionId(id);</span>
   }, []);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (regionsLoading) <span class="cstat-no" title="statement not covered" >return &lt;LoadingSpinner message="Loading regions..." /&gt;;</span></span>
-<span class="cstat-no" title="statement not covered" >  if (regionsError) <span class="cstat-no" title="statement not covered" >return &lt;ErrorAlert message="Failed to load region data. Check your connection." onRetry={<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >refetch()}</span> /&gt;;</span></span>
-<span class="cstat-no" title="statement not covered" >  if (!regionsData) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+  if (regionsLoading) return &lt;LoadingSpinner message="Loading regions..." /&gt;;
+  if (regionsError) return &lt;ErrorAlert message="Failed to load region data. Check your connection." onRetry={<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >refetch()}</span> /&gt;;
+  if (!regionsData) return null;
 &nbsp;
-  const regionList = <span class="cstat-no" title="statement not covered" >regionsData.features.map(<span class="fstat-no" title="function not covered" >(f</span>) =&gt; <span class="cstat-no" title="statement not covered" >f.properties)</span>;</span>
+  const regionList = regionsData.features.map((f) =&gt; f.properties);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;div className={styles.layout}&gt;
       &lt;Sidebar
         regions={regionList}
@@ -333,11 +333,11 @@ const Dashboard: React.FC&lt;{ sidebarOpen: boolean; onCloseSidebar: () =&gt; vo
 &nbsp;
               {/* Model selector tabs */}
               &lt;div className={styles.tabBar} role="tablist" aria-label="Forecast model"&gt;
-                {(["prophet", "arima", "hybrid"] as ModelType[]).map(<span class="fstat-no" title="function not covered" >(m</span>) =&gt; (
-<span class="cstat-no" title="statement not covered" >                  &lt;button</span>
+                {(["prophet", "arima", "hybrid"] as ModelType[]).map((m) =&gt; (
+                  &lt;button
                     key={m}
                     className={`${styles.tab} ${modelType === m ? styles.tabActive : ""}`}
-                    onClick={<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >setModelType(m)}</span>
+                    onClick={() =&gt; setModelType(m)}
                     role="tab"
                     aria-selected={modelType === m}
                   &gt;
@@ -358,7 +358,7 @@ const Dashboard: React.FC&lt;{ sidebarOpen: boolean; onCloseSidebar: () =&gt; vo
               /&gt;
               &lt;ResultsPanel result={optimizer.data} /&gt;
               &lt;ReportGenerator
-                selectedRegionIds={selectedRegionId ? [selectedRegionId] : []}
+                selectedRegionIds={selectedRegionId ? <span class="branch-0 cbranch-no" title="branch not covered" >[selectedRegionId] </span>: []}
               /&gt;
             &lt;/div&gt;
           &lt;/div&gt;
@@ -376,7 +376,7 @@ export default Dashboard;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-02-16T20:30:58.425Z
+                at 2026-02-17T06:14:53.869Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
