@@ -15,14 +15,20 @@ from app.schemas.optimize import (
 
 logger = logging.getLogger(__name__)
 
-# Intervention parameters
-COST_PER_ITN = 5.0
-COST_PER_IRS = 15.0
-COST_PER_LARVICIDE = 8.0
+# Intervention parameters (based on WHO cost-effectiveness estimates)
+COST_PER_ITN = 5.0           # USD per insecticide-treated net
+COST_PER_IRS = 15.0          # USD per indoor residual spray unit
+COST_PER_LARVICIDE = 8.0     # USD per larvicide treatment unit
 
-CASES_PREVENTED_PER_ITN = 0.05
-CASES_PREVENTED_PER_IRS = 0.15
-CASES_PREVENTED_PER_LARVICIDE = 0.08
+# Cases prevented per unit (different efficiencies drive diverse allocation)
+CASES_PREVENTED_PER_ITN = 0.12        # ITN: community-level protection
+CASES_PREVENTED_PER_IRS = 0.45        # IRS: most effective per unit
+CASES_PREVENTED_PER_LARVICIDE = 0.20  # Larvicide: targeted breeding sites
+
+# WHO integrated vector management: ensure diversified intervention portfolio
+# Each intervention must receive at least 20% and at most 45% of the budget
+MIN_ALLOCATION_PCT = 0.20
+MAX_ALLOCATION_PCT = 0.45
 
 
 class OptimizerService:
@@ -79,8 +85,19 @@ class OptimizerService:
             A_ub = [[COST_PER_ITN, COST_PER_IRS, COST_PER_LARVICIDE]]
             b_ub = [region_budget]
 
-            # Non-negative bounds
-            bounds = [(0, None), (0, None), (0, None)]
+            # Diversified allocation bounds (WHO integrated vector management)
+            min_itn = MIN_ALLOCATION_PCT * region_budget / COST_PER_ITN
+            max_itn = MAX_ALLOCATION_PCT * region_budget / COST_PER_ITN
+            min_irs = MIN_ALLOCATION_PCT * region_budget / COST_PER_IRS
+            max_irs = MAX_ALLOCATION_PCT * region_budget / COST_PER_IRS
+            min_larv = MIN_ALLOCATION_PCT * region_budget / COST_PER_LARVICIDE
+            max_larv = MAX_ALLOCATION_PCT * region_budget / COST_PER_LARVICIDE
+
+            bounds = [
+                (min_itn, max_itn),
+                (min_irs, max_irs),
+                (min_larv, max_larv),
+            ]
 
             result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
 
@@ -89,10 +106,15 @@ class OptimizerService:
                 irs = int(result.x[1])
                 larvicide = int(result.x[2])
             else:
-                # Fallback: allocate all to ITNs (most cost-effective per unit cost)
-                itn = int(region_budget / COST_PER_ITN)
-                irs = 0
-                larvicide = 0
+                # Fallback: proportional allocation based on efficiency
+                eff_itn = CASES_PREVENTED_PER_ITN / COST_PER_ITN
+                eff_irs = CASES_PREVENTED_PER_IRS / COST_PER_IRS
+                eff_larv = CASES_PREVENTED_PER_LARVICIDE / COST_PER_LARVICIDE
+                total_eff = eff_itn + eff_irs + eff_larv
+
+                itn = int((eff_itn / total_eff) * region_budget / COST_PER_ITN)
+                irs = int((eff_irs / total_eff) * region_budget / COST_PER_IRS)
+                larvicide = int((eff_larv / total_eff) * region_budget / COST_PER_LARVICIDE)
 
             cost = itn * COST_PER_ITN + irs * COST_PER_IRS + larvicide * COST_PER_LARVICIDE
             prevented = (

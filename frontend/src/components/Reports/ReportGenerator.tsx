@@ -1,90 +1,134 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useReport } from "../../hooks/useReport";
-import LoadingSpinner from "../Common/LoadingSpinner";
-import styles from "./ReportGenerator.module.css";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { FileText, Loader2, AlertCircle, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 interface ReportGeneratorProps {
   selectedRegionIds: number[];
 }
 
-const ReportGenerator: React.FC<ReportGeneratorProps> = ({ selectedRegionIds }) => {
+export default function ReportGenerator({ selectedRegionIds }: ReportGeneratorProps) {
   const { mutate, data, isPending, error } = useReport();
   const [includeOptions, setIncludeOptions] = useState({ forecast: true, optimization: true });
 
   const handleGenerate = () => {
     if (selectedRegionIds.length === 0) return;
-    mutate({
-      region_ids: selectedRegionIds,
-      include_forecast: includeOptions.forecast,
-      include_optimization: includeOptions.optimization,
-    });
+    mutate(
+      {
+        region_ids: selectedRegionIds,
+        include_forecast: includeOptions.forecast,
+        include_optimization: includeOptions.optimization,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Report generated successfully!");
+        },
+        onError: () => {
+          toast.error("Failed to generate report. Please try again.");
+        },
+      }
+    );
   };
 
   const noRegions = selectedRegionIds.length === 0;
 
   return (
-    <div className={styles.container} role="region" aria-label="Report generator">
-      <div className={styles.header}>
-        <svg className={styles.headerIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <h3 className={styles.title}>NLP Report Generator</h3>
+    <div role="region" aria-label="Report generator" className="space-y-4">
+      <div className="flex items-center gap-2">
+        <FileText className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">NLP Report Generator</h3>
       </div>
 
-      <fieldset className={styles.options}>
+      <fieldset className="space-y-3">
         <legend className="sr-only">Report options</legend>
-        <label className={styles.optionLabel}>
-          <input
-            type="checkbox"
-            className={styles.optionCheckbox}
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="include-forecast"
             checked={includeOptions.forecast}
-            onChange={(e) => setIncludeOptions((p) => ({ ...p, forecast: e.target.checked }))}
+            onCheckedChange={(checked) =>
+              setIncludeOptions((p) => ({ ...p, forecast: checked === true }))
+            }
           />
-          Include Forecast Data
-        </label>
-        <label className={styles.optionLabel}>
-          <input
-            type="checkbox"
-            className={styles.optionCheckbox}
+          <Label htmlFor="include-forecast" className="cursor-pointer">
+            Include Forecast Data
+          </Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="include-optimization"
             checked={includeOptions.optimization}
-            onChange={(e) => setIncludeOptions((p) => ({ ...p, optimization: e.target.checked }))}
+            onCheckedChange={(checked) =>
+              setIncludeOptions((p) => ({ ...p, optimization: checked === true }))
+            }
           />
-          Include Optimization Results
-        </label>
+          <Label htmlFor="include-optimization" className="cursor-pointer">
+            Include Optimization Results
+          </Label>
+        </div>
       </fieldset>
 
-      <button
-        className={styles.generateBtn}
+      <Button
         onClick={handleGenerate}
         disabled={isPending || noRegions}
         aria-busy={isPending}
+        className="w-full sm:w-auto"
       >
-        {isPending ? "Generating..." : "Generate Report"}
-      </button>
+        {isPending ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate Report
+          </>
+        )}
+      </Button>
 
       {noRegions && (
-        <p className={styles.hint}>Select a region first to generate a report.</p>
-      )}
-
-      {isPending && <LoadingSpinner message="Generating NLP summary..." size="small" />}
-
-      {error && (
-        <p className={styles.error} role="alert">
-          Failed to generate report. Please try again.
+        <p className="text-xs text-muted-foreground">
+          Select a region first to generate a report.
         </p>
       )}
 
+      {isPending && (
+        <div className="space-y-3 pt-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+        </div>
+      )}
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to generate report. Please try again.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {data && (
-        <div className={styles.result}>
-          <div className={styles.resultLabel}>AI-Generated Summary</div>
-          <p className={styles.resultText}>{data.summary}</p>
-          <div className={styles.resultMeta}>
-            {data.regions_analyzed} region(s) analyzed &middot; Model: {data.model_used}
+        <div className="mt-4">
+          <Separator className="mb-4" />
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <div className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">
+              AI-Generated Summary
+            </div>
+            <p className="text-sm text-foreground leading-relaxed">{data.summary}</p>
+            <div className="mt-3 text-xs text-muted-foreground">
+              {data.regions_analyzed} region(s) analyzed &middot; Model: {data.model_used}
+            </div>
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default ReportGenerator;
+}

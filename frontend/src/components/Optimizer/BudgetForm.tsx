@@ -1,6 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { RegionProperties, OptimizationRequest } from "../../types";
-import styles from "./BudgetForm.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { DollarSign, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface BudgetFormProps {
   regions: RegionProperties[];
@@ -8,7 +14,9 @@ interface BudgetFormProps {
   isLoading: boolean;
 }
 
-const BudgetForm: React.FC<BudgetFormProps> = ({ regions, onSubmit, isLoading }) => {
+const USD_TO_TZS = 2650;
+
+export default function BudgetForm({ regions, onSubmit, isLoading }: BudgetFormProps) {
   const [budget, setBudget] = useState<number>(50000);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
@@ -27,97 +35,103 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ regions, onSubmit, isLoading })
     onSubmit({ budget_usd: budget, region_ids: selectedIds });
   };
 
+  const tzsAmount = budget > 0 ? (budget * USD_TO_TZS).toLocaleString() : "0";
+
   return (
     <form
-      className={styles.form}
       onSubmit={handleSubmit}
       aria-label="Budget optimization form"
+      className="space-y-5"
     >
-      <div className={styles.header}>
-        <svg className={styles.headerIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-        </svg>
-        <h3 className={styles.title}>Budget Optimizer</h3>
+      <div className="flex items-center gap-2 mb-1">
+        <DollarSign className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">Budget Optimizer</h3>
       </div>
 
-      <div className={styles.fieldGroup}>
-        <label htmlFor="budget-input" className={styles.label}>
-          Total Budget (USD)
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="budget-input">Total Budget (USD)</Label>
+        <Input
           id="budget-input"
           type="number"
-          className={styles.input}
           value={budget}
           onChange={(e) => setBudget(Number(e.target.value))}
           min={1}
           aria-describedby="budget-hint"
         />
-        <div id="budget-hint" className={styles.inputHint}>
-          Minimum $1. Allocated across selected regions by risk weight.
+        <div className="text-sm font-medium text-primary">
+          &asymp; TZS {tzsAmount}
         </div>
+        <p id="budget-hint" className="text-xs text-muted-foreground">
+          Minimum $1. Allocated across selected regions by risk weight.
+        </p>
       </div>
 
-      <div className={styles.fieldGroup}>
-        <div className={styles.regionHeader}>
-          <label className={styles.label} id="region-list-label">Target Regions</label>
-          <button
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label id="region-list-label">Target Regions</Label>
+          <Button
             type="button"
-            className={styles.selectAllBtn}
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
             onClick={selectedIds.length === regions.length ? clearAll : selectAll}
           >
             {selectedIds.length === regions.length ? "Clear All" : "Select All"}
-          </button>
+          </Button>
         </div>
 
-        <div
-          className={styles.regionList}
-          role="group"
-          aria-labelledby="region-list-label"
-        >
-          {regions.map((r) => (
-            <label
-              key={r.id}
-              className={`${styles.regionItem} ${
-                selectedIds.includes(r.id) ? styles.regionItemSelected : ""
-              }`}
-            >
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                checked={selectedIds.includes(r.id)}
-                onChange={() => toggleRegion(r.id)}
-                aria-label={`${r.name} - Risk ${(r.risk_score * 100).toFixed(0)}%`}
-              />
-              {r.name}
-            </label>
-          ))}
-        </div>
+        <ScrollArea className="h-[200px] rounded-lg border border-border">
+          <div
+            className="p-2 space-y-1"
+            role="group"
+            aria-labelledby="region-list-label"
+          >
+            {regions.map((r) => (
+              <label
+                key={r.id}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 rounded-md cursor-pointer transition-colors text-sm",
+                  selectedIds.includes(r.id)
+                    ? "bg-primary/5 border border-primary/20"
+                    : "hover:bg-accent border border-transparent"
+                )}
+              >
+                <Checkbox
+                  checked={selectedIds.includes(r.id)}
+                  onCheckedChange={() => toggleRegion(r.id)}
+                  aria-label={`${r.name} - Risk ${(r.risk_score * 100).toFixed(0)}%`}
+                />
+                <span className="text-foreground">{r.name}</span>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {(r.risk_score * 100).toFixed(0)}%
+                </span>
+              </label>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
 
-      <button
+      <Button
         type="submit"
-        className={styles.submitBtn}
+        className="w-full"
         disabled={isLoading || selectedIds.length === 0}
         aria-busy={isLoading}
       >
         {isLoading ? (
           <>
-            <span className="sr-only">Optimizing budget allocation</span>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Optimizing...
           </>
         ) : (
           "Run Optimization"
         )}
-      </button>
+      </Button>
 
       {selectedIds.length > 0 && (
-        <div className={styles.selectedCount}>
+        <p className="text-center text-xs text-muted-foreground">
           {selectedIds.length} of {regions.length} regions selected
-        </div>
+        </p>
       )}
     </form>
   );
-};
-
-export default BudgetForm;
+}

@@ -1,4 +1,4 @@
-import React from "react";
+import { memo } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,7 +13,8 @@ import {
 import { Line } from "react-chartjs-2";
 import { ForecastResponse } from "../../types";
 import LoadingSpinner from "../Common/LoadingSpinner";
-import styles from "./ForecastChart.module.css";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BarChart3 } from "lucide-react";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Title, Tooltip, Legend);
 
@@ -22,21 +23,28 @@ interface ForecastChartProps {
   isLoading: boolean;
 }
 
-const EmptyState: React.FC = () => (
-  <div className={styles.emptyState}>
-    <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <path d="M3 3v18h18" />
-      <path d="M7 16l4-8 4 4 4-6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-    <div className={styles.emptyTitle}>No forecast data</div>
-    <p className={styles.emptyDesc}>
-      Select a region from the sidebar or click on the map to generate a mosquito density forecast.
-    </p>
-  </div>
-);
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <BarChart3 className="h-12 w-12 text-muted-foreground/30 mb-3" />
+      <div className="text-sm font-medium text-foreground mb-1">No forecast data</div>
+      <p className="text-xs text-muted-foreground max-w-xs">
+        Select a region from the sidebar or click on the map to generate a mosquito density forecast.
+      </p>
+    </div>
+  );
+}
 
-const ForecastChart: React.FC<ForecastChartProps> = ({ forecast, isLoading }) => {
-  if (isLoading) return <LoadingSpinner message="Generating forecast..." />;
+function ForecastChart({ forecast, isLoading }: ForecastChartProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-3 py-4">
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-[250px] w-full rounded-lg" />
+      </div>
+    );
+  }
+
   if (!forecast) return <EmptyState />;
 
   const labels = forecast.points.map((p) => p.date);
@@ -86,41 +94,46 @@ const ForecastChart: React.FC<ForecastChartProps> = ({ forecast, isLoading }) =>
     plugins: {
       title: {
         display: true,
-        text: `${forecast.region_name} — ${forecast.model_type.toUpperCase()} (${forecast.forecast_days}d)`,
+        text: `${forecast.region_name} \u2014 ${forecast.model_type.toUpperCase()} (${forecast.forecast_days}d)`,
         font: { size: 13, weight: "bold" as const },
-        color: "#333",
+        color: "#1a1a2e",
       },
       tooltip: {
-        backgroundColor: "rgba(0,0,0,0.8)",
+        backgroundColor: "rgba(255,255,255,0.95)",
+        titleColor: "#1a1a2e",
+        bodyColor: "#4a4a4a",
+        borderColor: "#e0e0e0",
+        borderWidth: 1,
         titleFont: { size: 12 },
         bodyFont: { size: 11 },
         padding: 10,
         cornerRadius: 6,
       },
       legend: {
-        labels: { font: { size: 11 }, usePointStyle: true, pointStyle: "line" },
+        labels: { font: { size: 11 }, usePointStyle: true, pointStyle: "line" as const, color: "#4a4a4a" },
       },
     },
     scales: {
       y: {
-        title: { display: true, text: "Density (per trap-night)", font: { size: 11 } },
+        title: { display: true, text: "Density (per trap-night)", font: { size: 11 }, color: "#6b7280" },
         grid: { color: "rgba(0,0,0,0.05)" },
+        ticks: { color: "#6b7280" },
       },
       x: {
-        title: { display: true, text: "Date", font: { size: 11 } },
-        ticks: { maxTicksLimit: 8, font: { size: 10 } },
+        title: { display: true, text: "Date", font: { size: 11 }, color: "#6b7280" },
+        ticks: { maxTicksLimit: 8, font: { size: 10 }, color: "#6b7280" },
         grid: { display: false },
       },
     },
   };
 
   return (
-    <div className={styles.container} role="img" aria-label={`Forecast chart for ${forecast.region_name}`}>
-      <div className={styles.chartWrap}>
+    <div role="img" aria-label={`Forecast chart for ${forecast.region_name}`}>
+      <div className="relative">
         <Line data={chartData} options={options} />
       </div>
     </div>
   );
-};
+}
 
-export default React.memo(ForecastChart);
+export default memo(ForecastChart);

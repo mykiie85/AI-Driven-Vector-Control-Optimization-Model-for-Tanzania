@@ -74,4 +74,5 @@ export interface ReportResponse {
   summary: string;
   regions_analyzed: number;
   model_used: string;
+  pdf_url: string | null;
 }

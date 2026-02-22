@@ -1,115 +1,142 @@
-import React, { useCallback, useMemo } from "react";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
-import { Layer, PathOptions } from "leaflet";
-import { RegionGeoJSON, RegionProperties } from "../../types";
-import Legend from "./Legend";
-import styles from "./MapView.module.css";
-import "leaflet/dist/leaflet.css";
+import { MapContainer, TileLayer, CircleMarker, Popup, GeoJSON } from "react-leaflet";
+import type { RegionGeoJSON } from "@/types";
+import L from "leaflet";
+import { useMemo } from "react";
 
-interface MapViewProps {
-  data: RegionGeoJSON;
+interface Props {
+  geojson?: RegionGeoJSON;
+  selectedRegion: number | null;
   onSelectRegion: (id: number) => void;
 }
 
-function getRiskColorRaw(score: number): string {
-  if (score >= 0.8) return "#b71c1c";
-  if (score >= 0.6) return "#f44336";
-  if (score >= 0.3) return "#ff9800";
-  return "#4caf50";
+function riskColor(score: number): string {
+  if (score >= 0.75) return "#dc2626";
+  if (score >= 0.6) return "#ef4444";
+  if (score >= 0.4) return "#f59e0b";
+  return "#22c55e";
 }
 
-function getRiskLabel(score: number): string {
-  if (score >= 0.8) return "Critical";
-  if (score >= 0.6) return "High";
-  if (score >= 0.3) return "Medium";
-  return "Low";
+function riskFill(score: number): string {
+  if (score >= 0.75) return "rgba(220,38,38,0.25)";
+  if (score >= 0.6) return "rgba(239,68,68,0.2)";
+  if (score >= 0.4) return "rgba(245,158,11,0.18)";
+  return "rgba(34,197,94,0.15)";
 }
 
-const MapView: React.FC<MapViewProps> = ({ data, onSelectRegion }) => {
-  const style = useCallback((feature: any): PathOptions => {
-    const risk = feature?.properties?.risk_score ?? 0;
-    return {
-      fillColor: getRiskColorRaw(risk),
-      weight: 2,
-      opacity: 1,
-      color: "#fff",
-      fillOpacity: 0.65,
-    };
-  }, []);
+function getCoordinates(geometry: any): [number, number] | null {
+  if (!geometry) return null;
 
-  const onEachFeature = useCallback(
-    (feature: any, layer: Layer) => {
-      const props = feature.properties as RegionProperties;
-      const riskPct = (props.risk_score * 100).toFixed(0);
-      const riskColor = getRiskColorRaw(props.risk_score);
-      const riskLabel = getRiskLabel(props.risk_score);
+  if (geometry.type === "Polygon" && geometry.coordinates[0]) {
+    const coords = geometry.coordinates[0];
+    let lat = 0, lng = 0;
+    for (const [lon, latVal] of coords) {
+      lng += lon;
+      lat += latVal;
+    }
+    return [lat / coords.length, lng / coords.length];
+  } else if (geometry.type === "MultiPolygon" && geometry.coordinates[0]) {
+    const coords = geometry.coordinates[0][0];
+    let lat = 0, lng = 0;
+    for (const [lon, latVal] of coords) {
+      lng += lon;
+      lat += latVal;
+    }
+    return [lat / coords.length, lng / coords.length];
+  }
+  return null;
+}
 
-      const popupContent = `
-        <div class="${styles.popup}">
-          <div class="${styles.popupName}">${props.name}</div>
-          <table class="${styles.popupTable}">
-            <tr>
-              <td class="${styles.popupLabel}">Population</td>
-              <td class="${styles.popupValue}">${props.population?.toLocaleString() ?? "N/A"}</td>
-            </tr>
-            <tr>
-              <td class="${styles.popupLabel}">Area</td>
-              <td class="${styles.popupValue}">${props.area_km2 ? props.area_km2.toLocaleString() + " km\u00B2" : "N/A"}</td>
-            </tr>
-            <tr>
-              <td class="${styles.popupLabel}">Risk</td>
-              <td class="${styles.popupValue}">
-                <span class="${styles.popupRisk}">
-                  <span class="${styles.popupRiskDot}" style="background-color:${riskColor}"></span>
-                  ${riskLabel} (${riskPct}%)
-                </span>
-              </td>
-            </tr>
-          </table>
-          <button class="${styles.viewBtn}" onclick="window.__selectRegion(${props.id})">View Details</button>
-        </div>
-      `;
-
-      layer.bindPopup(popupContent);
-      layer.on({ click: () => onSelectRegion(props.id) });
-    },
-    [onSelectRegion]
+export default function MapView({ geojson, selectedRegion, onSelectRegion }: Props) {
+  const geoJsonKey = useMemo(
+    () => `${selectedRegion}-${geojson?.features?.length}`,
+    [selectedRegion, geojson]
   );
 
-  // Expose region selector for popup button
-  React.useEffect(() => {
-    (window as any).__selectRegion = onSelectRegion;
-    return () => {
-      delete (window as any).__selectRegion;
-    };
-  }, [onSelectRegion]);
-
-  const geoJsonKey = useMemo(() => JSON.stringify(data), [data]);
+  if (!geojson) {
+    return (
+      <div className="w-full h-full min-h-[480px] flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Loading map...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.container} role="region" aria-label="Interactive map of Tanzania regions">
-      <MapContainer
-        center={[-6.5, 35.0]}
-        zoom={6}
-        className={styles.map}
-        scrollWheelZoom={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {data.features.length > 0 && (
-          <GeoJSON
-            key={geoJsonKey}
-            data={data as any}
-            style={style}
-            onEachFeature={onEachFeature}
-          />
-        )}
-      </MapContainer>
-      <Legend />
-    </div>
-  );
-};
+    <MapContainer
+      center={[-6.5, 35.5]}
+      zoom={6}
+      className="w-full h-full min-h-[480px] rounded-xl"
+      scrollWheelZoom={true}
+      style={{ background: "hsl(120 50% 95%)" }}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+      />
 
-export default React.memo(MapView);
+      {/* Region boundary polygons */}
+      <GeoJSON
+        key={geoJsonKey}
+        data={geojson as any}
+        style={(feature) => {
+          const score = feature?.properties?.risk_score || 0;
+          const isSelected = feature?.properties?.id === selectedRegion;
+          return {
+            color: isSelected ? "#16a34a" : riskColor(score),
+            weight: isSelected ? 3 : 1.5,
+            opacity: isSelected ? 1 : 0.7,
+            fillColor: riskFill(score),
+            fillOpacity: isSelected ? 0.4 : 0.25,
+          };
+        }}
+        onEachFeature={(feature, layer) => {
+          const props = feature.properties;
+          if (props) {
+            layer.on({ click: () => onSelectRegion(props.id) });
+            layer.bindPopup(
+              `<div style="font-family: Inter, sans-serif; font-size: 13px">
+                <strong>${props.name}</strong><br/>
+                Risk: ${(props.risk_score * 100).toFixed(0)}%<br/>
+                Pop: ${props.population?.toLocaleString() || "N/A"}
+              </div>`
+            );
+          }
+        }}
+      />
+
+      {/* Circle markers at region centroids */}
+      {geojson.features?.map((feature) => {
+        const props = feature.properties;
+        const coords = getCoordinates(feature.geometry);
+        if (!coords) return null;
+
+        const score = props?.risk_score || 0;
+        const isSelected = props?.id === selectedRegion;
+        const radius = isSelected ? 12 : 8;
+
+        return (
+          <CircleMarker
+            key={props?.id}
+            center={coords}
+            radius={radius}
+            fillColor={riskColor(score)}
+            color={isSelected ? "#16a34a" : "#fff"}
+            weight={2}
+            opacity={0.9}
+            fillOpacity={0.9}
+            eventHandlers={{
+              click: () => onSelectRegion(props?.id),
+            }}
+          >
+            <Popup>
+              <div style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}>
+                <strong>{props?.name}</strong><br/>
+                Risk: {(score * 100).toFixed(0)}%<br/>
+                Pop: {props?.population?.toLocaleString()}
+              </div>
+            </Popup>
+          </CircleMarker>
+        );
+      })}
+    </MapContainer>
+  );
+}

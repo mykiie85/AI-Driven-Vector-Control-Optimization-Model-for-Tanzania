@@ -12,7 +12,7 @@ router = APIRouter()
 async def get_forecast(
     region_id: int,
     days: int = Query(default=30, ge=7, le=365),
-    model: str = Query(default="prophet", regex="^(prophet|arima|hybrid)$"),
+    model: str = Query(default="prophet", pattern="^(prophet|arima|hybrid)$"),
     db: AsyncSession = Depends(get_db),
 ):
     service = ForecastService(db)

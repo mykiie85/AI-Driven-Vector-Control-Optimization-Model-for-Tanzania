@@ -1,66 +1,138 @@
-import React from "react";
+import { useEffect, useRef } from "react";
 import { OptimizationResponse } from "../../types";
-import styles from "./ResultsPanel.module.css";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { FileBarChart, DollarSign, TrendingDown, Wallet } from "lucide-react";
+import { gsap } from "gsap";
 
 interface ResultsPanelProps {
   result: OptimizationResponse | undefined;
 }
 
-const EmptyState: React.FC = () => (
-  <div className={styles.emptyState}>
-    <svg className={styles.emptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-    <p className={styles.emptyText}>
-      Run the optimizer above to see allocation results here.
-    </p>
-  </div>
-);
+const USD_TO_TZS = 2650;
 
-const ResultsPanel: React.FC<ResultsPanelProps> = ({ result }) => {
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center">
+      <FileBarChart className="h-10 w-10 text-muted-foreground/30 mb-3" />
+      <p className="text-sm text-muted-foreground">
+        Run the optimizer above to see allocation results here.
+      </p>
+    </div>
+  );
+}
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  subValue,
+  color,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  subValue?: string;
+  color: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 p-4 rounded-lg border border-border bg-card">
+      <div className={`p-2 rounded-md ${color}`}>
+        <Icon className="h-4 w-4 text-white" />
+      </div>
+      <div>
+        <div className="text-xs text-muted-foreground font-medium">{label}</div>
+        <div className="text-lg font-semibold text-foreground">{value}</div>
+        {subValue && (
+          <div className="text-xs text-muted-foreground">{subValue}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function ResultsPanel({ result }: ResultsPanelProps) {
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (result && tableRef.current) {
+      const rows = tableRef.current.querySelectorAll("tr");
+      gsap.fromTo(
+        rows,
+        { opacity: 0, x: -15 },
+        { opacity: 1, x: 0, stagger: 0.04, duration: 0.35, ease: "power2.out" }
+      );
+    }
+  }, [result]);
+
   if (!result) return <EmptyState />;
 
   return (
-    <div className={styles.container} role="region" aria-label="Optimization results">
-      <div className={styles.metrics}>
-        <div className={`${styles.metricCard} ${styles.metricBudget}`}>
-          <div className={styles.metricLabel}>Budget</div>
-          <div className={styles.metricValue}>${result.total_budget.toLocaleString()}</div>
-        </div>
-        <div className={`${styles.metricCard} ${styles.metricUsed}`}>
-          <div className={styles.metricLabel}>Used</div>
-          <div className={styles.metricValue}>${result.total_cost.toLocaleString()}</div>
-        </div>
-        <div className={`${styles.metricCard} ${styles.metricPrevented}`}>
-          <div className={styles.metricLabel}>Cases Prevented</div>
-          <div className={styles.metricValue}>{result.total_cases_prevented.toLocaleString()}</div>
-        </div>
+    <div role="region" aria-label="Optimization results" className="space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <FileBarChart className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">Results</h3>
       </div>
 
-      <table className={styles.table} aria-label="Resource allocation per region">
-        <thead>
-          <tr>
-            <th scope="col">Region</th>
-            <th scope="col">ITNs</th>
-            <th scope="col">IRS</th>
-            <th scope="col">Larvicide</th>
-            <th scope="col">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          {result.allocations.map((a) => (
-            <tr key={a.region_id}>
-              <td>{a.region_name}</td>
-              <td>{a.itn_units.toLocaleString()}</td>
-              <td>{a.irs_units.toLocaleString()}</td>
-              <td>{a.larvicide_units.toLocaleString()}</td>
-              <td>${a.cost.toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <MetricCard
+          icon={Wallet}
+          label="Budget"
+          value={`$${result.total_budget.toLocaleString()}`}
+          subValue={`TZS ${(result.total_budget * USD_TO_TZS).toLocaleString()}`}
+          color="bg-blue-500"
+        />
+        <MetricCard
+          icon={DollarSign}
+          label="Used"
+          value={`$${result.total_cost.toLocaleString()}`}
+          subValue={`TZS ${(result.total_cost * USD_TO_TZS).toLocaleString()}`}
+          color="bg-amber-500"
+        />
+        <MetricCard
+          icon={TrendingDown}
+          label="Cases Prevented"
+          value={result.total_cases_prevented.toLocaleString()}
+          color="bg-emerald-500"
+        />
+      </div>
+
+      <div ref={tableRef} className="rounded-lg border border-border overflow-hidden">
+        <Table aria-label="Resource allocation per region">
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead>Region</TableHead>
+              <TableHead className="text-right">ITNs</TableHead>
+              <TableHead className="text-right">IRS</TableHead>
+              <TableHead className="text-right">Larvicide</TableHead>
+              <TableHead className="text-right">Cost</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {result.allocations.map((a) => (
+              <TableRow key={a.region_id} className="hover:bg-muted/30 transition-colors">
+                <TableCell className="font-medium">{a.region_name}</TableCell>
+                <TableCell className="text-right tabular-nums">{a.itn_units.toLocaleString()}</TableCell>
+                <TableCell className="text-right tabular-nums">{a.irs_units.toLocaleString()}</TableCell>
+                <TableCell className="text-right tabular-nums">{a.larvicide_units.toLocaleString()}</TableCell>
+                <TableCell className="text-right">
+                  <span className="tabular-nums">${a.cost.toLocaleString()}</span>
+                  <span className="text-xs text-muted-foreground block">
+                    TZS {(a.cost * USD_TO_TZS).toLocaleString()}
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
-};
-
-export default ResultsPanel;
+}

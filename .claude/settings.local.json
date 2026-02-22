@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell:*)",
+      "Bash(docker info:*)",
+      "Bash(grep:*)",
+      "Bash(docker run:*)",
+      "Bash(docker compose:*)",
+      "Bash(DOCKER_BUILDKIT=1 docker build:*)",
+      "Bash(docker exec:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git checkout:*)",
+      "Bash(git clean:*)",
+      "Bash(node -e:*)",
+      "Bash(dir:*)",
+      "Bash(if exist node_modules rmdir /s /q node_modules)",
+      "Bash(if exist package-lock.json del package-lock.json)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(npm run build:*)"
+    ]
+  }
+}

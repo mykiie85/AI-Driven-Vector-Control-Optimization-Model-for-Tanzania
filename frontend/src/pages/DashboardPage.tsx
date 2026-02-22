@@ -1,9 +1,11 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Header from "../components/Layout/Header";
 import Dashboard from "../components/Layout/Dashboard";
+import useLenis from "../hooks/useLenis";
 
-const DashboardPage: React.FC = () => {
+export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useLenis();
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -14,11 +16,9 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      <Header onToggleSidebar={toggleSidebar} />
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
       <Dashboard sidebarOpen={sidebarOpen} onCloseSidebar={closeSidebar} />
     </div>
   );
-};
-
-export default DashboardPage;
+}
