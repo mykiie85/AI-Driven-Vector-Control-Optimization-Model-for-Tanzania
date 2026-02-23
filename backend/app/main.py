@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import forecast, health, optimize, regions, reports
+from app.api.routes import forecast, health, migrate, optimize, regions, reports
 from app.core.config import settings
 
 logging.basicConfig(level=getattr(logging, settings.log_level.upper()))
@@ -42,3 +42,4 @@ app.include_router(regions.router, prefix="/api/v1", tags=["Regions"])
 app.include_router(forecast.router, prefix="/api/v1", tags=["Forecast"])
 app.include_router(optimize.router, prefix="/api/v1", tags=["Optimization"])
 app.include_router(reports.router, prefix="/api/v1", tags=["Reports"])
+app.include_router(migrate.router, prefix="/api/v1", tags=["Migration"])
