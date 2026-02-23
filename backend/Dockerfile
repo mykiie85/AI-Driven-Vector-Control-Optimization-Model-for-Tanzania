@@ -1,17 +1,13 @@
 FROM python:3.11-slim AS base
 
-# Install system dependencies, R, and weasyprint deps
+# Install system dependencies (weasyprint + geo libs only — no R, no CmdStan)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    r-base \
-    r-base-dev \
     libpq-dev \
     libgdal-dev \
     libgeos-dev \
     libproj-dev \
     gcc \
     g++ \
-    cmake \
-    make \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libgdk-pixbuf-2.0-0 \
@@ -19,19 +15,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install R packages
-RUN Rscript -e "install.packages(c('forecast', 'jsonlite'), repos='https://cloud.r-project.org/')"
-
 WORKDIR /app
 
-# Install Python dependencies and build CmdStan for Prophet
+# Install CPU-only PyTorch first (300MB vs 2GB GPU version)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install remaining Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
-    && python -m cmdstanpy.install_cmdstan --cores 2
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
