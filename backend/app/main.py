@@ -37,6 +37,7 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix="/api/v1", tags=["Health"])
+app.include_router(health.router, tags=["Health"])  # Root /health for Render health checks
 app.include_router(regions.router, prefix="/api/v1", tags=["Regions"])
 app.include_router(forecast.router, prefix="/api/v1", tags=["Forecast"])
 app.include_router(optimize.router, prefix="/api/v1", tags=["Optimization"])

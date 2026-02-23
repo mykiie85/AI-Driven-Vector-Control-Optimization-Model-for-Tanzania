@@ -11,6 +11,8 @@ class ForecastPoint(BaseModel):
 
 
 class ForecastResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
+
     region_id: int
     region_name: str
     model_type: str

@@ -20,6 +20,8 @@ class ReportRequest(BaseModel):
 
 
 class ReportResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
+
     summary: str
     regions_analyzed: int
     model_used: str
