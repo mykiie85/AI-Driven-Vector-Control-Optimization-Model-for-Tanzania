@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://vcom:vcom_secret_change_me@localhost:5432/vcom_tz"
     api_key: str = "change-me-to-a-secure-key"
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,https://ai-driven-vector-control-optimization-0ksx.onrender.com"
     log_level: str = "info"
 
     r_timeout: int = 300
