@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
@@ -8,6 +9,49 @@ from app.core.dependencies import get_db
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _split_sql(sql: str) -> list[str]:
+    """Split SQL into individual statements, respecting DO $$ ... $$ blocks."""
+    statements = []
+    current_lines: list[str] = []
+    in_dollar_block = False
+
+    for line in sql.split("\n"):
+        stripped = line.strip()
+
+        # Detect start of DO $$ block
+        if not in_dollar_block and re.match(r"^\s*DO\s+\$\$", stripped, re.IGNORECASE):
+            in_dollar_block = True
+            current_lines.append(line)
+            continue
+
+        # Detect end of DO $$ block
+        if in_dollar_block:
+            current_lines.append(line)
+            if re.search(r"\$\$\s*;?\s*$", stripped):
+                in_dollar_block = False
+                stmt = "\n".join(current_lines).strip().rstrip(";")
+                if stmt:
+                    statements.append(stmt)
+                current_lines = []
+            continue
+
+        # Normal SQL: accumulate lines, split on ;
+        current_lines.append(line)
+        if stripped.endswith(";"):
+            stmt = "\n".join(current_lines).strip().rstrip(";").strip()
+            if stmt:
+                statements.append(stmt)
+            current_lines = []
+
+    # Leftover lines without trailing ;
+    leftover = "\n".join(current_lines).strip().rstrip(";").strip()
+    if leftover:
+        statements.append(leftover)
+
+    return statements
+
 
 # Migrations embedded directly — no filesystem dependency
 MIGRATIONS = [
@@ -151,7 +195,10 @@ async def run_migrations(db: AsyncSession = Depends(get_db)):
 
     for name, sql in MIGRATIONS:
         try:
-            await db.execute(text(sql))
+            # asyncpg requires one statement per execute() call
+            statements = _split_sql(sql)
+            for stmt in statements:
+                await db.execute(text(stmt))
             await db.commit()
             results.append({"migration": name, "status": "success"})
             logger.info("Migration %s applied successfully", name)
