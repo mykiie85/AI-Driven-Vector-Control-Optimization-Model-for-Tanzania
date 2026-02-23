@@ -1,19 +1,21 @@
 import asyncio
+import os
 from datetime import date, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import StaticPool, event
+from sqlalchemy import StaticPool, event, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.main import app
 from app.models.database import Base, get_session
 
 
-# Use SQLite for tests (no PostGIS needed for unit tests)
-TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
+# Use PostgreSQL if DATABASE_URL is set (CI), otherwise fall back to SQLite
+TEST_DB_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+_using_sqlite = TEST_DB_URL.startswith("sqlite")
 
 
 @pytest.fixture(scope="session")
@@ -25,23 +27,31 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="function")
 async def db_engine():
-    engine = create_async_engine(
-        TEST_DB_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+    engine_kwargs = {}
+    if _using_sqlite:
+        engine_kwargs["connect_args"] = {"check_same_thread": False}
+        engine_kwargs["poolclass"] = StaticPool
 
-    # Load SpatiaLite for GeoAlchemy2 compatibility
-    @event.listens_for(engine.sync_engine, "connect")
-    def connect(dbapi_conn, connection_record):
-        dbapi_conn.enable_load_extension(True)
-        try:
-            dbapi_conn.load_extension("mod_spatialite")
-        except Exception:
-            pass
+    engine = create_async_engine(TEST_DB_URL, **engine_kwargs)
+
+    if _using_sqlite:
+        # Optionally load SpatiaLite for GeoAlchemy2 compatibility
+        @event.listens_for(engine.sync_engine, "connect")
+        def connect(dbapi_conn, connection_record):
+            raw_conn = getattr(dbapi_conn, "_connection", dbapi_conn)
+            raw_conn = getattr(raw_conn, "_conn", raw_conn)
+            try:
+                raw_conn.enable_load_extension(True)
+                raw_conn.load_extension("mod_spatialite")
+            except (AttributeError, OSError):
+                pass
+
+    if not _using_sqlite:
+        # PostgreSQL: ensure PostGIS extension exists
+        async with engine.begin() as conn:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
 
     async with engine.begin() as conn:
-        # Create all tables (without PostGIS-specific columns for SQLite)
         await conn.run_sync(Base.metadata.create_all)
 
     yield engine
@@ -81,7 +91,7 @@ async def seeded_db(db_session):
     from app.models.region import Region
     from app.models.surveillance import SurveillanceData
 
-    # Add test regions (without geometry for SQLite)
+    # Add test regions (without geometry for SQLite compatibility)
     regions = [
         Region(id=1, name="Dar es Salaam", population=5383728, area_km2=1393, risk_score=0.82),
         Region(id=2, name="Dodoma", population=2604590, area_km2=41311, risk_score=0.45),

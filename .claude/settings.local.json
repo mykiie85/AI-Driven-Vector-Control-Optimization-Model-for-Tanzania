@@ -17,7 +17,8 @@
       "Bash(if exist package-lock.json del package-lock.json)",
       "Bash(npm install:*)",
       "Bash(curl:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebFetch(domain:ai-driven-vector-control-optimization.onrender.com)"
     ]
   }
 }
