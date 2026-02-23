@@ -45,7 +45,8 @@ async def test_arima_forecast_success():
 
 
 @pytest.mark.asyncio
-async def test_arima_forecast_r_failure():
+async def test_arima_forecast_r_failure_falls_back():
+    """When R ARIMA fails, forecast() should fall back to Python statsmodels."""
     mock_process = AsyncMock()
     mock_process.returncode = 1
     mock_process.communicate = AsyncMock(return_value=(b"", b"Error in auto.arima"))
@@ -53,13 +54,16 @@ async def test_arima_forecast_r_failure():
     with patch("asyncio.create_subprocess_exec", return_value=mock_process):
         service = ARIMAService()
         df = make_test_df()
+        points = await service.forecast(df, 30)
 
-        with pytest.raises(RuntimeError, match="R ARIMA failed"):
-            await service.forecast(df, 30)
+    # Should succeed via Python fallback
+    assert len(points) == 30
+    assert points[0].predicted_density >= 0
 
 
 @pytest.mark.asyncio
-async def test_arima_forecast_timeout():
+async def test_arima_forecast_timeout_falls_back():
+    """When R ARIMA times out, forecast() should fall back to Python statsmodels."""
     import asyncio
 
     mock_process = AsyncMock()
@@ -69,13 +73,16 @@ async def test_arima_forecast_timeout():
         service = ARIMAService()
         service.timeout = 1
         df = make_test_df()
+        points = await service.forecast(df, 30)
 
-        with pytest.raises(RuntimeError, match="timed out"):
-            await service.forecast(df, 30)
+    # Should succeed via Python fallback
+    assert len(points) == 30
+    assert points[0].predicted_density >= 0
 
 
 @pytest.mark.asyncio
-async def test_arima_forecast_invalid_json():
+async def test_arima_forecast_invalid_json_falls_back():
+    """When R returns invalid JSON, forecast() should fall back to Python statsmodels."""
     mock_process = AsyncMock()
     mock_process.returncode = 0
     mock_process.communicate = AsyncMock(return_value=(b"not json", b""))
@@ -83,6 +90,22 @@ async def test_arima_forecast_invalid_json():
     with patch("asyncio.create_subprocess_exec", return_value=mock_process):
         service = ARIMAService()
         df = make_test_df()
+        points = await service.forecast(df, 30)
 
-        with pytest.raises(RuntimeError, match="Failed to parse"):
-            await service.forecast(df, 30)
+    # Should succeed via Python fallback
+    assert len(points) == 30
+    assert points[0].predicted_density >= 0
+
+
+@pytest.mark.asyncio
+async def test_arima_python_forecast_directly():
+    """Test the Python statsmodels ARIMA forecast directly."""
+    service = ARIMAService()
+    df = make_test_df()
+    points = await service._python_forecast(df, 30)
+
+    assert len(points) == 30
+    for p in points:
+        assert p.predicted_density >= 0
+        assert p.lower_ci >= 0
+        assert p.upper_ci >= 0

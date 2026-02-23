@@ -31,10 +31,14 @@ async def db_engine():
         poolclass=StaticPool,
     )
 
-    # Enable spatialite loading for GeoAlchemy2 compatibility (skip if not available)
+    # Load SpatiaLite for GeoAlchemy2 compatibility
     @event.listens_for(engine.sync_engine, "connect")
     def connect(dbapi_conn, connection_record):
-        dbapi_conn.execute("SELECT 1")
+        dbapi_conn.enable_load_extension(True)
+        try:
+            dbapi_conn.load_extension("mod_spatialite")
+        except Exception:
+            pass
 
     async with engine.begin() as conn:
         # Create all tables (without PostGIS-specific columns for SQLite)

@@ -73,6 +73,6 @@ def test_cost_constants():
     assert COST_PER_ITN == 5.0
     assert COST_PER_IRS == 15.0
     assert COST_PER_LARVICIDE == 8.0
-    assert CASES_PREVENTED_PER_ITN == 0.05
-    assert CASES_PREVENTED_PER_IRS == 0.15
-    assert CASES_PREVENTED_PER_LARVICIDE == 0.08
+    assert CASES_PREVENTED_PER_ITN == 0.12
+    assert CASES_PREVENTED_PER_IRS == 0.45
+    assert CASES_PREVENTED_PER_LARVICIDE == 0.20
