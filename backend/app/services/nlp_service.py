@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import datetime
 
-from jinja2 import Template
+from jinja2 import Environment, select_autoescape
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -74,15 +74,28 @@ REPORT_TEMPLATE = """\
 def _get_pipeline():
     global _pipeline
     if _pipeline is None:
-        from transformers import pipeline
+        # transformers>=5 removed the "summarization" pipeline task, so load
+        # the seq2seq model directly and expose a pipeline-like callable.
+        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
         logger.info("Loading NLP model: %s", settings.nlp_model)
-        _pipeline = pipeline(
-            "summarization",
-            model=settings.nlp_model,
-            max_length=settings.nlp_max_length,
-            min_length=settings.nlp_min_length,
-        )
+        tokenizer = AutoTokenizer.from_pretrained(settings.nlp_model)
+        model = AutoModelForSeq2SeqLM.from_pretrained(settings.nlp_model)
+
+        def _summarize(text: str, **_kwargs):
+            inputs = tokenizer(
+                text, return_tensors="pt", truncation=True,
+                max_length=tokenizer.model_max_length,
+            )
+            output_ids = model.generate(
+                **inputs,
+                max_length=settings.nlp_max_length,
+                min_length=settings.nlp_min_length,
+                do_sample=False,
+            )
+            return [{"summary_text": tokenizer.decode(output_ids[0], skip_special_tokens=True)}]
+
+        _pipeline = _summarize
     return _pipeline
 
 
@@ -127,7 +140,8 @@ class NLPService:
             pdf_id = str(uuid.uuid4())
             pdf_path = os.path.join(REPORT_DIR, f"{pdf_id}.pdf")
 
-            template = Template(REPORT_TEMPLATE)
+            env = Environment(autoescape=select_autoescape(default=True, default_for_string=True))
+            template = env.from_string(REPORT_TEMPLATE)
             html = template.render(
                 date=datetime.now().strftime("%B %d, %Y at %H:%M"),
                 summary=summary,
